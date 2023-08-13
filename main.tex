@@ -1,0 +1,279 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+
+
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{hhline}
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\usepackage{graphicx}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{balance}
+\begin{document}
+\title{Concealing Dementia Diagnoses in ASR Models by Node Toggling with a Cancellation Network}
+\author{Wei-Tung Hsu, Chin-Po Chen~\IEEEmembership{Student Member,~IEEE},  Chi-Chun Lee~\IEEEmembership{Senior Member,~IEEE}}
+
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~18, No.~9, September~2020}%
+{How to Use the IEEEtran \LaTeX \ Templates}
+
+\maketitle
+
+\begin{abstract}
+There is a need for Automatic Speech Recognition (ASR) applications to be inclusive to any users including the  vulnerable population. Besides the model performance on vulnerable population should be considered, privacy concerns are also needed to be dealt with. Hence, privacy-preserving machine learning (PPML) algorithms are getting important, and many researchers are dedicating themselves to the development of PPML. One branch of PPML is learning-based PPML, which contains two approaches: attribute elimination (like gradient reversal layer approaches) and node cancellation. Compared to attribute elimination the node cancellation approach, like the feature scoring machine (FSM) proposed in recent work \cite{huang2022attention}, is more scalable. Nevertheless, not being able to train in an end-to-end fashion has brought limitations to this method. Consequently, this study proposes a Dementia Attribute Cancellation Strategy (DACS) that improves from recent FSM by allowing the important node cancellation parameters to be automatically determined. In addition, this study focuses on dementia attribute protection, in which we set up a corresponding experimental setup to evaluate the privacy protection efficacy. We found that using DACS can achieve 33\% dementia protection efficacy, which significantly improves from the baseline result of 0\%. Finally, the final model can be configured to adjust to the needs of downstream tasks. In our case, our model can achieve 45\% of dementia protection efficacy with a little decrease in ASR performance (0.004 WER).
+
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+Privacy-preserving machine learning (PPML), automatic speech recognition, sequence-to-sequence learning
+\end{IEEEkeywords}
+
+
+\begin{figure*}
+\centerline{\includegraphics[width=\textwidth]{model_archi.png}}
+\caption{An illustration of the proposed DACS model. Each branch should contain its main task classifier / decoder, and the discriminator for the task whose information should be removed. To simplify, we use one frame to demonstrate how the toggling network generate node-toggling decision vector in the second part.}
+\label{fig:MdlArchi}
+\end{figure*}
+
+\section{Introduction}
+Emerging focus on Inclusive-AI aims at making AI service accessible to all users regardless of demographic categories, health status and other conditions \cite{avellan2020ai}. An example is that people with disability (POD) are vulnerable populations to access reliable automatic speech recognition (ASR) \cite{srinivasan2022ssncse_nlp,guo2020toward}. The speech of POD is prone to not only erroneous transcriptions (often due to low resource challenge) but also severe violations of user privacy \cite{williams2023new}. Recently, privacy-preserving machine learning (PPML) algorithms are being actively developed to address privacy concerns. Specifically, learning-based PPML is a common approach to mitigate the risk of privacy leakage from feature embeddings of end-to-end ASR systems.
+
+%which includes vulnerable populations \cite{avellan2020ai}.
+%For example, people with disability (POD) are vulnerable populations to Automatic Speech Recognition (ASR) services \cite{srinivasan2022ssncse_nlp,guo2020toward}.
+
+%Specifically, the speech of POD is often prone to errornous transcription, and they may also be unwilling to expose their clinical diagnosis while using ASR services (there are several cases of unauthorized recordings that seriously violated user privacy \cite{williams2023new}). 
+
+%To deal with the privacy issue, 
+
+Learning-based PPML algorithms can be categorized into attribute-elimination and node-cancellation approaches. The attribute-elimination approach often involves using a gradient reversal layer (GRL) or its variant strategy to eliminate unwanted attribute's information in the feature space. For example, \textcolor{red}{find new references for gradient reversal strategy of privacy protection, the original two do not seem to say the right thing}. On the other hand, node-cancellation approach is a newer strategy that relies on first making attribute-specific feature information to the specified feature dimensions
+
+In addition, Huang et al.\ proposed FS-VAE \cite{huang2022attention}, that simultaneously trained Feature Scoring Machines (FSMs) to deal with multiple privacy-preserving downstream tasks. FS-VAE uses node-cancellation approach that shows better results than attributre-elimination methods in their study. 
+
+He et al.\ used weighted GRL (WGRL) to project data from two domains onto the same feature space, in which WGRL places stronger weights on those hard-confused samples and increases the performance of the domain classifier \cite{he2019multi}.
+Williams et al.\ disentangled phone and speaker information, making their text-to-speech system invariant to any particular speaker's voice \cite{williams2021learning};
+
+% However, the attribute-elimination approach is not scalable because each privacy-preserving task this approach requires each opt-out attribute to have an independent adversary network to assist in eliminating the attribute. , and only need to train aligns relevant attributes to their corresponding donwstream tasks, enabling multiple Feature Scoring Machines (FSMs) trained at once only one adversary network to be trained for multiple tasks.In contrast, the node-cancellation approach places opt-out attributes on different nodes and then further makes these attributes so that attributes can be removed via a single adversary network. A classic example is FS-VAE proposed by Thus, compared to attribute-elimination approaches, node-cancellation approaches are more scalable.
+However, FS-VAE contains a few limitations. Firstly, it requires each downstream task to have an independent FSM to assist in eliminating the attribute, making this method not scalable. Second, it also requires node-maksing thresholds to be manually tuned, making the training of FS-VAE not efficient and not precise. To make the entire privacy-preserve model more scalable and reduce the number of manually-tuned hyper-parameters, we propose an end-to-end training strategy to train the network. Additionally, because the importance of protecting the vulnerable population is higher than protecting the major population, we introduced recall loss in our model training, which put more weight on participants with dementia label. 
+
+% parameters like node-maksing thresholds can only be manually tuned in past studies \cite{huang2022attention}. This creates a few limitations. First, parameter tuning is time-consuming and requires manpower. Second, these parameters are less precisely determined by humans, compared to end-to-end approaches. 
+% Additionally, prior approaches project general user categories instead of particular vulnerable population. The importance of protecting the vulnerable population is higher than protecting the major population. This study contributes to one of the node-cancellation approach of learning-based PPML algorithms. Specifically, our study provide an end-to-end learning strategy and is configurable to put more weight on the classes of vulnerable population.
+This study contributes to an end-to-end node-cancellation approach that preserve user privacy with a toggling network. The toggling network leverages ASR embeddings of instant frame to toggle off particular nodes that are suspected to contain user privacy. Our approach exhibits a 45\% higher protection efficacy compared to the baseline model, which had demonstrated a severe risk of privacy breach in our experiment. Additionally, we demonstrate that our privacy-preserving network can be configured to adapt to tasks with different demands for protection efficacy and downstream task performance. Finally, our analysis shows that the toggling network isolates relevant attributes across different branches, and each toggled-embedding contains attributes customized for its downstream task.  
+
+\begin{table}[]
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ &
+  People &
+  Utterance &
+  Age &
+  \begin{tabular}[c]{@{}c@{}}Gender \\ (Male / Female)\end{tabular} \\ \hline
+Train &
+  \begin{tabular}[c]{@{}c@{}}AD: 54\\ HC: 54\end{tabular} &
+  1868 &
+  \begin{tabular}[c]{@{}c@{}}AD: 66.759±6.610\\ HC: 66.352±6.502\end{tabular} &
+  \begin{tabular}[c]{@{}c@{}}AD: 24 / 30\\ HC: 24 / 30\end{tabular} \\ \hline
+Test &
+  \begin{tabular}[c]{@{}c@{}}AD: 24\\ HC: 24\end{tabular} &
+  800 &
+  \begin{tabular}[c]{@{}c@{}}AD: 66.125±7.439\\ HC: 66.125±7.085\end{tabular} &
+  \begin{tabular}[c]{@{}c@{}}AD: 11 / 13\\ HC: 11 / 13\end{tabular} \\ \hline
+\end{tabular}
+\label{tab:demographics}
+\caption{Demographics of our final dataset}
+\end{table}
+
+
+
+\section{Methodology}
+\label{sec:Proposed}
+% Motivation of ADReSS dataset in use for this study
+\subsection{Dataset description}
+% Wei-tung
+% There’re 54 healthy controls (24 males and 30 females) and 54 Alzheimer's disease (AD) patients with the same number of males and females for training. As for testing, there’re 24 persons (11 males and 13 females) for both healthy controls and AD patients. ADReSS Challenge Dataset contains audio recordings and transcriptions of people describing the Cookie Theft picture from the Boston Diagnostic Aphasia Examination. It’s matched in gender and age to eliminate the bias for prediction tasks. We cut the audio recordings according to the time-steps given in the transcriptions for each sentence, and divide the training set into training and validation sets. We removed some short utterances and resulted in 1868 utterances for training, 206 for validation, and 800 for testing. Utterances from investigators are also used in training the ASR. They will be labeled as healthy controls.
+ADReSS Challenge dataset \cite{luz2020alzheimer} is used in this study for it contains speech recordings and their corresponding transcripts along with clinical diagnosis of the participants. The major content of this dataset is recordings of participants undergoing the Boston Diagnostic Aphasia Examination. This dataset has been used in developing speech\&language technologies for clinical applications \cite{ilias2023detecting,wang2022conformer,li2022gpt,farzana2022you}.
+% Demographics of this dataset, and our data selection criteria
+78 patients diagnosed as Alzheimer's disease (AD) and healthy controls (HC) are included in this dataset. The gender and age of AD and HC participants are matched. Conversations as a form of audio and text data are contained in this dataset. The average duration of each conversation session is 75.3 seconds. We sliced each sessional audios into utterances with provided timestamps and removed utterances that are less than 0.1 second (extreme short audio segments are impossible to contain clear speech). Additionally, both utterances of the investigators and the participants are used as training data, and only the participants' utterances are used for evaluation. Finally. the demographics describing our final dataset is in Table.\ref{tab:demographics}
+%分別說明FSM跟training時用的loss
+
+\begin{figure}
+\centerline{\includegraphics[width=6cm, height=6cm]{disentangleAnal.png}}
+\caption{A 2 dimensional t-SNE demonstration of data distributions of original ASR embeddings, toggled embeddings on ASR-free branch, and toggled embeddings on AD-free branch.}
+\label{fig:tsneDistrib}
+\end{figure}
+
+
+\subsection{The dementia attribute cancellation strategy}
+\label{ssec:strategy}
+% 如同過去的node-cancellation approach我們用adversarial的手法來訓練我們的network。Prior work用adversarial的手法訓練FSM\cite{huang2022attention}，FSM會輸出一個score vector並設一個threshold$theta$作為whether to cancel a particular node的decision。與他們不同的是，我們透過Gumbel-softmax的機制end-to-end來決定這個node-toggling decision，這個做法能省去manual設定threshold的步驟，讓node-toggling decision變得更efficient且precise。
+% The first part of Figure.\ref{fig:MdlArchi}說明node-cancellation的過程，在ASR network inference的時候每個frame-level embedding會input到toggling network並且output一個node-toggling decision vector, whose values are either 0 or 1，這個vector的每一個dimension代表toggling on/off frame-level embedding上相對應dimension(or node)的decision，最後，我們讓這個vector與frame-level embedding相乘，讓embedding上部份的node被cancel掉；部分的node value被保留。
+% The second part of Figure.\ref{fig:MdlArchi}說明我們訓練toggling network的方法。首先similar to prior work\cite{huang2022attention}我們disentangle 的方式藉由那個branch 的corresponding task classifier, and task discriminator將main task attribute and adversarial task attribute align 到他們的branch上。接下來，跟FSM的方法一樣\cite{huang2022attention}我們用diversity loss來強化那個分支排除掉其他不相干任務的能力。為了這個目的我們需要…
+Similar to prior node-cancellation approaches, we use adversarial training methods to train our network. Previous studies have employed adversarial training to train a finite-state machine (FSM) \cite{huang2022attention}, which outputs a score vector and sets a threshold $\theta$ to determine whether to cancel a particular node. In contrast, we use an end-to-end Gumbel-softmax mechanism to determine the node-toggling decision. This approach eliminates the need for manually setting the threshold, making the node-toggling decision more efficient and precise.
+
+The first part of Figure \ref{fig:MdlArchi} illustrates the process of node-cancellation. During inference phase, the node-toggling network processes each frame-level embedding from the ASR encoder, and outputs a node-toggling decision vector, in which the values of its entries are either 0 or 1. Each dimension of this vector represents the decision to toggle on/off the corresponding dimension (or node) of the frame-level embedding. Finally, we multiply this vector with the frame-level embedding to cancel out some of the nodes while retaining others.
+
+The second part of Figure \ref{fig:MdlArchi} illustrates our method for training the toggling network. Similar to FSM \cite{huang2022attention}, we disentangle the embedding attributes of the main and adversarial tasks by aligning the attributes to their respective branches. 
+The attribute alignment is achieved by training node-toggling network with a downstream task classifier with one or multiple discriminators, which consist of a cascade of GRL and downstream task classifiers of other tasks. Next, diversity loss is used to reinforce the disentanglement of attribute between branches as in prior study \cite{huang2022attention}. In this study, we set a main task and a adversarial task, which are ASR and dementia classification task, respectively. We have two branches: the AD-free ASR branch and ASR-free AD classification branch. The AD-free ASR branch contains a AD discrimnator, which is a GRL cascaded with a AD classifier, and a ASR decoder; reversely, the other branch contains a ASR discriminator and a AD classifier. Below is the implementation of each component. 
+
+
+\subsubsection{ASR encoder}
+\label{ssec:ASRencod}
+% 這個component架構是什麼，input output是什麼，我們用什麼loss來訓練這個架構: ASR encoder用的是Data2Vec，他可以是universal的音訊編碼器，在很多speech task上都有很好的performance。我們在這個研究使用的是XX setting的XXX pretrain model，這個encoder出來的embedding是N=1024
+Data2vec \cite{baevski2022data2vec} is adopted as the ASR encoder in this study because it can be a universal audio encoder generating effective feature representations that perform well on ASR tasks. The input of the ASR encoder is an audio waveform sampled at 16kHz, and the output dimension, $D$, of the ASR encoder is 1024.
+
+
+\subsubsection{The toggling network}
+\label{ssec:toglNet}
+The toggling network is a Multilayer Perceptron (MLP), which expands the embedding into a vector with dimension 2*B*D, where B represents the number of branches (B=2 in this study). This vector is then divided into B sub-vectors of dimension 2*D to each branch. For each branch the sub-vector will be rearranged to a matrix M, where M $\in R^{2*D}$, and be passed to a Gumbel-softmax function. 
+\[
+d^{i}_{k}=\frac{exp(\frac{s^{i}_{k}+g^{i}_{k}}{\tau})}{\sum_{j=1}^{2}exp(\frac{s^{j}_{k}+g^{j}_{k}}{\tau})}
+\] 
+, where $ 1 <= k <= D$ represents entries of M and $i\in \{1,2\}$ represents the column of M. $g^{i}_{k}$ is sampled from Gumbel Distribution, $ s^{i}_{k} $ represents the value of an entry in M. $\tau=1$ is the softmax temperature value. After applying the Gumbel-Softmax operation, two sets of mutually exclusive vectors are generated, where their entries are mutually exclusive (i.e., if $d^{i=1}_{k}$ = 1, then $d^{i=2}_{k}$ will be 0, and vice versa). We arbitrarily select ${d^{i=1}_{k}}$ as the node-toggling vector, in which $d^{i=1}_{k}$ represents the decision value, whose value approximates 1 or 0, determining whether to toggle off the node in entry k. 
+
+
+To train the toggling network, adversarial and disentangling losses are used. Let $L_{toggle}$ be the total loss
+\begin{equation}
+L_{toggle} = L_{ctc}+ L_{ctc-GRL} + L_{recall-GRL} + L_{recall}  + L_{div}
+\end{equation}
+, where $L_{ctc}$ is CTC loss and $L_{recall}$ is recall loss calculated from the AD-classifier output. $L_{ctc-GRL}$ and $L_{recall-GRL}$ are gradient reversed $L_{ctc}$ and $L_{recall}$ for adversarial training. Specifically, $L_{ctc}$ and $L_{recall-GRL}$ are a adversarial pair of losses to align corresponding attributes for AD-free ASR branch; $L_{recall}$ and $L_{ctc-GRL}$ are another adversarial pair for ASR-free AD branch.
+$L_{recall}$ is adopted instead of cross entropy-based losses for it provides the flexibility to emphasize protecting participants with AD labels. Inspired from \cite{tian2021recall}, we implemented $L_{recall}$ as \begin{equation}
+L_{recall} = 1-\frac{1}{N}\sum_{c=1}^{C}\sum_{k:y_k=c}w_cP_k^{y_k}
+\end{equation}
+$k:y_{k}=c$ denotes the samples that the ground truth label $y_{i}$ is class c, and $w_c$ is the weight for class c, which is set as 0.5 for HC and 0.5 for AD. We then calculate $P_k^{y_k}$, the output probability of class $y_{k}$, to represent the recall of that class. The other parameters are $C$, the number of classes; $N$, the number of samples. Finally, $L_{div}$ is the divergence loss calculated as in FSM presented by Huang et al. \cite{huang2022attention} which is used for reinforcing attribute disentanglement between two branches. 
+We verified the effect of divergence loss on the testing data, and is shown in Figure.\ref{fig:tsneDistrib}. The toggled embeddings on both AD branch and ASR branches distribute differently from original ASR embeddings. Furthermore, the distribution of AD-free embeddings shifted to the upper bound of y-axis, while the ASR-free embeddings shifted to the lower bound. 
+
+
+\subsubsection{Downstream task classifiers}
+This study uses two downstream task classifiers: ASR decoder and AD classifier. ASR decoder adopts the same setting in \cite{baevski2022data2vec}, and the AD classifier is a 2-layer MLP projecting D dimensional embeddings to 2-dimensional dementia classification logits. The input to the ASR decoder is a replicated ASR encoder embedding multiplied with a node-toggling decision vector, and the output of the ASR decoder is English transcription. However, there will be a scale mismatch problem when training and using AD-classifier since the input is frame-level embedding while the label is a session-level dementia diagnosis. To deal with the mismatch, aggregation and up sampling operations were used. Given there are N utterances denoted by $u_{n}$ from a participant and there are T timesteps in one particular utterance $u_{n} = \{x_{1},x_{2},...x_{T}\}$. We then calculate $\overline{u_{n}}=\frac{1}{T}\sum_{t=1}^{T}{x_{t}}$, a mean vector to represent that utterance. Each utterance-level vector will be paired with the participant's dementia label representing a training sample $(\overline{u_{n}}^{P}, L^{P})_{n}$.
+% we have multiple timestep-level inputs paired with a session-level label. As for the AD-classifier, the input to the AD-classifier also has a toggled embedding calculated from the ASR encoder embedding and its corresponding node-toggling decision vector. However, there will be a scale mismatch problem when training and using this classifier since we have multiple timestep-level inputs paired with a session-level label. 
+\subsection{Training procedure}
+% 為了符合XX setting，我們獨立訓練完XXX就freeze了。換句話說每個module都是各自獨立訓練完組裝起來，但是由於有些module的訓練會依賴另一個所以有訓練順序。我們先使用dataset的audio跟transcription  finetune ASR的encoder跟decoder。然後我們使用ASR encoder來製造AD-classifier的input，並使用dataset的dementia label來訓練。最後我們用訓練好的ASR encoder decoder以及AD classifier來guide toggling network。
+The AD classifier, ASR encoder and decoder were first
+pre-trained and they were frozen while training the toggling network. Notice that the ASR decoder and AD-classifier training depend on the ASR encoder, so we use the following order to train our networks. First, we use audio and transcriptions from the ADReSS Challenge dataset to fine-tune the ASR encoder and decoder initialized with settings in \cite{baevski2022data2vec}. Then we train the AD classifier with the input embedding from the ASR encoder and dementia label from the dataset. Lastly, we train the the toggling network utilizing the freezed ASR encoder, decoder, and AD classifier. Finally, we implemented the DACS in \footnote{The link to our gitlab repository \url{https://biicgitlab.ee.nthu.edu.tw/weitung.hsu/dementia-attribute-cancellation-strategy-dacs}.}.
+
+
+\section{EXPERIMENTS}
+\label{sec:experiments}
+\subsection{Experimental setup}
+% 我們目標是測試在dementia上學好的ASR model裡面是否潛藏曝露AD diagnosis的風險。為了這個目標，我們首先訓練並測試我們的ASR model，接著我們將接近預測終端的embedding取出來，使用簡單的classifier像是XXX來驗證這些embedding有沒有機會學出dementia prediction model。
+% Our study objective is to minimize the risk of exposing dementia diagnoses while maintaining ASR performance. The toggling network of our DACS diminishes the risk by canceling out unwanted information embedded in the output of the ASR encoder. For this purpose, we set up privacy-preserving ASR task that aims to protect users' dementia attribute while preserving ASR performance. 
+% 我們設想的情境是當an adversary 獲得embeddings from ASR encoder, 他可以retreive這個user的dementia attribute，為了驗證我們toggle過後的feature embedding不包含dementia attribute，我們藉由訓練一個簡單classifier來看feature embedding搆不構contrastive能區分AD跟HC，
+% retrieves a user's dementia attribute by the embeddings from ASR encoder output. Hence a simple classifier (e.g., SVM) is used to verify if the toggled embeddings are still useful for training models to do the dementia classification task. Therefore, we can expect an optimal model to perform poorly on the dementia classification task while maintaining good performance on the ASR task.
+% ASR task我們Data2Vec的架構採用XXX的參數設定，依照XXXrecipe去訓練它，最後我們用WER當作evaluation metric。 至於dementia recognition task，是一個binary classification task (hc/cc). 我們使用nested cross validation的方法來驗證SVM，SVM會再\{ XXX\}的參數內挑選出最好的參數再測試在test data上。metric方面我們用Acc, UAR, FPR來衡量dementia diagnosis被保護程度。
+Consider a privacy attack scheme that an adversary can retrieve user's dementia diagnosis using a simple classifier. Therefore, we set up a privacy preserving ASR task that aims to hide the dementia diagnosis while maintaining the ASR performance. WER is used to evaluate performance of ASR; we use 1 - Acc(\%), 1 - F1(\%), and dementia protection efficacy (DPE) are used to evaluate the performance of privacy preservation, in which Acc and F1 are the accuracy and f1-score of the AD classifier. Furthermore, we use DPE, an evaluation method that calculates the improvement from a baseline method. Inspired by the evaluation of vaccine efficacy \cite{orenstein1985field}, DPE measures the attributable proportion of the protection by our method, and it is calculated as 
+
+\begin{equation}
+DPE = \frac{\frac{TP_f}{N_{AD}} - \frac{TP_t}{N_{AD}}}{\frac{TP_f}{N_{AD}}}
+\end{equation}
+$\frac{TP_f}{N_{AD}}$ represents the risk (diagnosis exposure) of unprotected users, whereas $\frac{TP_t}{N_{AD}}$ represents the risk of protected users. Moreover, the risk of unprotected users is calculated by the true positives of the baseline model (Fine-tune) in the dementia recognition task ($TP_f$) divide by the number of AD participants ($N_{AD}$). Similarly the risk of protected users is calculated by the true positives of a protection model ($TP_t$) divide by $N_{AD}$.
+
+% ASR task performance was evaluated using WER. The dementia recognition task is a binary classification task classifying HC vs. AD. In this task, SVM was trained as our verification classifier on utterance level. For each utterance, we would form one embedding by taking min of all the embeddings in that utterance. The SVM prediction was turned into session level by voting. If over half of the utterances of a person were classified as AD, the final prediction of this person would be AD. The session level result was used to calculate accuracy, F1, and the protection efficacy we presented.
+
+
+
+% The ASR task performance was evaluated using WER. The dementia recognition task is a binary classification task classifying HC vs. AD. In this task, SVM was trained as our verification classifier on utterance level. For each utterance, we would form one embedding by taking min of all the embeddings in that utterance. The SVM prediction was turned into session level by voting. If over half of the utterances of a person were classified as AD, the final prediction of this person would be AD. The session level result was used to calculate accuracy, F1, and the protection efficacy we presented.
+% ACC, F1, and dementia protection efficacy (DPE) are the metrics used in this task to measure the risk of the ASR-encoded embeddings confers for the exposure of dementia diagnoses. Inspired by the evaluation of vaccine efficacy \cite{orenstein1985field}, DPE measures the attributable proportion of the protection by our method, and it is calculated as 
+% Table for Baselines
+\begin{table}[]
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{|c||c||c|c|r|}
+\hline
+                        & WER   & Acc. / 1-Acc.   (\%) & 1-F1 (\%) & \multicolumn{1}{c|}{DPE (\%)} \\ \hline
+Fine-tune               & 0.257 & 79.17 / 20.83        & 21.74     & --                            \\ \hline
+GRL                     & 0.272 & 72.92 / 27.08        & 31.71     & 22.23                         \\ \hline
+Single Toggling         & 0.259 & 75.00 / 25.00        & 25.00     & 0.00                          \\ \hline
+FSM & 0.259 & 77.08 / 22.92        & 22.45     & -5.56                         \\ \hline
+DACS        & 0.257 & 66.67 / 33.33        & 40.00     & 33.33                          \\ \hline
+\multicolumn{5}{|c|}{} \\[-8pt]% adjust this value according to your needs 
+            \hline 
+GS-Div+recall & 0.257 & 70.83 / 29.17        & 30.43     & 11.11                         \\ \hline
+GS+Div-recall            & 0.258 & 77.08 / 22.92        & 23.40     & 0.00                          \\ \hline
+GS-Div-recall         & 0.259 & 79.17 / 20.83        & 21.74     & 0.00                          \\ \hline
+\end{tabular}
+}
+\caption{ASR performances in WER and privacy preservation performances in 1-Acc. (\%), 1-F1(\%) and dementia protection efficacy (DPE) (\%) of different models}
+\label{tab:result}
+\end{table}
+
+
+
+\subsection{Baseline methods}
+% 除了我們提出的GS, 我們另外還實踐了一些相關PPML的架構：
+Multiple baselines are implemented in comparison with the DACS. The baseline models are listed below:
+% use a figure to illustrate may be better
+\begin{itemize}
+\item 1. Fine-tune: finetune pre-trained Data2Vec model to ADReSS dataset
+\item 2. GRL: model 1 trained with additional GRL loss
+\item 3. Single Toggling: Refer to Figure.\ref{fig:MdlArchi} DACS without splitting each downstream task into a different branch.
+\item 4. Feature Scoring Machine: feature scoring mechanism network proposed by \cite{huang2022attention}
+\end{itemize}
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Analysis_dynamic.png}}
+\caption{WERs and protection efficacies in aggressive and passive modes. P value in x-axis is negative when DACS mode is configured to passive, and is positive when configured to aggressive.}
+\label{fig:AnalStat}
+\end{figure}
+
+
+
+\subsection{Experimental Result}
+\label{ssec:result}
+\subsubsection{DACS achieves better model performance and protection efficacy compared to the baseline models}
+\label{ssec:DSCNbest}
+Firstly, our result demonstrates that the WER of the fine-tuned Data2Vec model (the baseline model) is 25\%, which competes the state-of-the-art (SOTA) ASR model \cite{pan2020improving}. We also observed that the dementia diagnosis prediction accuracy is high, with the value of 79.17\%. We set this model as the reference for DPE, so its DPE=0\%. The unprocessed embedding can be easily classified by a simple classifier, which confirms the high risk of privacy exposure. Secondly, the GRL method can effectively improve the protection efficacy by 22\% However, WER simultaneously increases to 0.27, showing that ASR performance also decreases. The baseline model FSM decreases the overall performance of dementia classification task (accuracy improves from 79.17 to 77.08) but the DPE also decreases. This result indicates that FSM optimizes toward the overall classification result, and such optimization decreases DPE. Finally, compared to the baseline methods, our proposed DACS improves protection efficacy by an additional 33\%, and the performance of ASR task competes with the SOTA model. The result indicates that 33 percent of diagnosed dementia patients' privacy can be protected by DACS.
+
+\subsubsection{Ablation study}
+% 好的privacy protect performance credit to recall loss跟div loss. 
+% 我們試著拿掉這兩種loss之後發現不論是protection efficacy或overall protection都有明顯地下降。
+% 首先當我們使用CE loss instead of recall loss的時候overall protection 下降到 100 - 70.83\% ，而且dementia protection efficacy更是下降到11\%
+% 第二，當我們維持用recall loss但是拿掉div loss的時候overall protection 下降到 100 - 77.08\% ，而且這時已經沒有dementia protection efficacy了
+% 第三，當我們拿掉div loss而且使用CE的時候，performance回復到跟baseline一樣完全沒有保護力。
+% In brief，在DACS下透過recall loss和div loss能夠有效保護patients' privacy.
+High performance of dementia privacy protection credit to recall loss and divergence loss. After we replace or remove these losses, we found not only the protection efficacy but also the overall protection decrease obviously. First, when we are using cross entropy loss instead of recall loss, the overall protection decreases to 29.17\% (refer to column: Acc/1-Acc. in table.\ref{tab:result}), and the DPE decreases to 11\%. Then if we remove divergence loss while still using recall loss, the overall protection decreases to 22.92\%, and the DPE drops to 0. This result infers that although the toggling network protects no additional dementia participants, a few healthy control participants are still protected from exposing their dementia diagnoses. Lastly, if the divergence loss is not used and cross entropy loss instead of recall loss is used, the performance of dementia recognition task becomes the same as the baseline model, which doesn't protect users' privacy. In brief, recall loss and divergence loss enable the developer to protect dementia patients' privacy effectively under the dementia attribute cancellation strategy.
+
+\subsubsection{Aggressive and passive modes of DACS}
+% 我們在先前的章節可以看到使用ASR的過程中，ASR embedding容易reveal privacy (about 80\% accuracy)，然而也可以靠著turn off一些node來保護privacy。這個章節我們藉由static node toggling analysis與dynamic node toggling analysis來討論開關這些node對ASR performance還有protection efficacy的影響。
+In this section, we demonstrate that DACS can be configured to two different node-toggling patterns: aggressive and passive modes. This additional configuration step allows developers to make adjustments for the need of different tasks. Given a trained DACS model, the node-toggling decision vector will be determined by score matrix M passing through the Gumbel-softmax function (please refer to section.\ref{ssec:toglNet}). Besides those nodes that were already determined to be toggled on, it is feasible to further toggle on more nodes, and similarly, we can also toggle off more nodes. Hence, we set up a standard procedure to aggressively toggle off or passively toggle on the rest of the nodes. First, we retained the nodes that were already toggled on/off from the Gumbel-softmax output. Second, we calculated $\Delta s$, the difference between $s^{i=1}_{k}$ and $s^{i=2}_{k}$ ($s^{i=1}_{k} - s^{i=2}_{k}$), to sort the toggling decisions. Higher $\Delta s$ indicates that the corresponding nodes are more likely to be toggled on, whereas lower $\Delta s$ means they are more likely to be toggled off. Then, in our passive toggling mode, we further toggled on the nodes corresponding to top P\% highest $\Delta s$ among the rest of the nodes, whilst in our aggressive toggling mode, we further toggled off the nodes corresponding to P\% lowest $\Delta s$.
+
+Figure.\ref{fig:AnalStat} shows the result of the performance in our tasks by setting P$\in$\{-80, -60, -40, -20, 0, 20, 40, 60, 80\}, in which the negative values of P means that the DACS mode is configured to passive mode. There seems to be a trend that the protection efficacy improved when more nodes were toggled off. Specifically, the protection efficacy increased to 0.45 when over 60\% additional nodes were toggled off. As for ASR performance, WER increased to 0.259, which seems to be a tolarable tradeoff with increased protection efficacy. In contrast, the ASR performance increased to WER$\approx$0.2578 when we toggled on more than 60\% additional nodes in passive mode, but the protection efficacy also decreased to $\approx$0.1. 
+
+The results indicate that the protection efficacy and the error rate of main task both increases as more nodes were toggled off. Conversely, these metrics both decreases when more nodes were toggled on. These results demonstrate that a DACS model can be train once and be configured to different downstream tasks that demand better performance on either protection efficacy or main task, despite in this study it seems more optimal to configure the model in aggressive mode.
+
+
+% Additionally, the DACS is appropriate to deal with tasks demanding dynamically adjustments on protection or classification. 
+
+
+
+
+% ===============================================
+%       4.CONCLUSION AND FUTURE WORK
+% ===============================================
+
+\section{Conclusion}
+\label{sec:conclusion}
+% 這篇研究們提出DACS讓ASR server provider 能夠在protect dementia users' privacy的情況下正常使用ASR service。
+% DACS比起attribute elimination的方法更scalable也比node cancellation 的 FSM 更能precisely protect dementia patients' privacy. 
+% 實驗結果發現DACS最高能達到33\%的dementia protection efficacy
+% 我們也提供developer ways to configure parameters under the DACS depending on their use cases.
+In this research we propose DACS that allows ASR service provider to protect dementia users' privacy while maintaining ASR performance. Compared to attribute elimination approaches, DACS is more scalable, and can protect dementia patients' privacy more precisely than FSM. Our result shows that DACS achieves 33\% of DPE, which is obviously better than that of the baseline models. We also demonstrate how P\% can be configured to bias the optimal performance toward either protection or classification task. 
+This study presents a novel learning-based PPML strategy, and we test it only on one dataset for a certain purpose. A comprehensive study on multiple datasets and more tasks will be done in our future work to investigate the limitations and potentials of DACS. 
+
+% -------------------------------------------------------------------------
+\bibliographystyle{IEEEbib}
+% \bibliography{refs,strings}
+\bibliography{refs}
+
+\end{document}
+
+
